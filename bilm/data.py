@@ -123,7 +123,7 @@ class UnicodeCharsVocabulary(Vocabulary):
         self.eos_char = 257  # <end sentence>
         self.bow_char = 258  # <begin word>
         self.eow_char = 259  # <end word>
-        self.pad_char = 260 # <padding>
+        self.pad_char = 260  # <padding>
 
         num_words = len(self._id_to_word)
 
@@ -189,9 +189,25 @@ class UnicodeCharsVocabulary(Vocabulary):
         else:
             return np.vstack([self.bos_chars] + chars_ids + [self.eos_chars])
 
+    def decode_chars(self, char_ids):
+        words = []
+        for row in char_ids:
+            chars = []
+            for a in row:
+                if a < 256:
+                    chars.append(chr(a))
+                elif a == 256:
+                    chars.append('<S>')
+                elif a == 257:
+                    chars.append('</S>')
+            words.append(''.join(chars))
+        return ' '.join(words).strip()
+        # words = [''.join([chr(a) for a in row if a < 256]) for row in char_ids]
+        # return ' '.join(words).strip()
+
 
 class Batcher(object):
-    ''' 
+    '''
     Batch sentences of tokenized text into character id matrices.
     '''
     def __init__(self, lm_vocab_file: str, max_token_length: int):
@@ -230,7 +246,7 @@ class Batcher(object):
 
 
 class TokenBatcher(object):
-    ''' 
+    '''
     Batch sentences of tokenized text into token id matrices.
     '''
     def __init__(self, lm_vocab_file: str):

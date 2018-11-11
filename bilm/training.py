@@ -484,6 +484,7 @@ class LanguageModel(object):
         # now calculate losses
         # loss for each direction of the LSTM
         self.individual_losses = []
+        self.losses = []
 
         if self.bidirectional:
             next_ids = [self.next_token_id, self.next_token_id_reverse]
@@ -519,6 +520,7 @@ class LanguageModel(object):
                         labels=tf.squeeze(next_token_id_flat, squeeze_dims=[1])
                     )
 
+            self.losses.append(losses)
             self.individual_losses.append(tf.reduce_mean(losses))
 
         # now make the total loss -- it's the mean of the individual losses
@@ -674,7 +676,6 @@ def _get_feed_dict_from_X(X, start, end, model, char_inputs, bidirectional):
 
 def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
           restart_ckpt_file=None):
-
     # not restarting so save the options
     if restart_ckpt_file is None:
         with open(os.path.join(tf_save_dir, 'options.json'), 'w') as fout:
@@ -762,8 +763,9 @@ def train(options, data, n_gpus, tf_save_dir, tf_log_dir,
 
     # do the training loop
     bidirectional = options.get('bidirectional', False)
-    with tf.Session(config=tf.ConfigProto(
-            allow_soft_placement=True)) as sess:
+    config = tf.ConfigProto(allow_soft_placement=True)
+    config.gpu_options.allow_growth = True
+    with tf.Session(config=config) as sess:
         sess.run(init)
 
         # load the checkpoint data if needed
@@ -1023,6 +1025,7 @@ def test(options, ckpt_file, data, batch_size=256):
                 _get_feed_dict_from_X(X, 0, X['token_ids'].shape[0], model,
                                           char_inputs, bidirectional)
             )
+            from IPython import embed; embed(); import os; os._exit(1)
 
             ret = sess.run(
                 [model.total_loss, final_state_tensors],

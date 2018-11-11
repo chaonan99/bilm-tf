@@ -592,7 +592,7 @@ class BidirectionalLanguageModelGraph(object):
                              init_states[i][batch_size:, :]], axis=0)
                         state_update_op = tf.assign(init_states[i], new_state)
                         update_ops.append(state_update_op)
-    
+
                 layer_input = layer_output
 
         self.mask = mask
